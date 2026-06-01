@@ -1,0 +1,802 @@
+<Window x:Class="LocalCursor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:LocalCursor.ViewModels"
+        xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:conv="clr-namespace:LocalCursor.Converters"
+        xmlns:helpers="clr-namespace:LocalCursor.Helpers"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" Height="850" Width="1500"
+        WindowState="Maximized"
+        WindowStyle="SingleBorderWindow" Background="{StaticResource BackgroundPrimary}"
+        Icon="logo.png">
+    
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <conv:EmptyToDefaultConverter x:Key="EmptyToDefaultConverter"/>
+        <conv:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter"/>
+        <conv:QueueCountToHeaderConverter x:Key="QueueCountToHeaderConverter"/>
+
+        <DataTemplate x:Key="TraceEntryTemplate">
+            <Border Background="{StaticResource BackgroundSecondary}" Margin="0,0,0,8" Padding="10" CornerRadius="6" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="32"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE9D5;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{StaticResource AccentColor}" 
+                               VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <Grid>
+                            <TextBlock Text="{Binding State}" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                            <TextBlock Text="{Binding Timestamp, StringFormat=HH:mm:ss}" HorizontalAlignment="Right" FontSize="10" Foreground="{StaticResource TextSecondary}" Opacity="0.6"/>
+                        </Grid>
+                        <TextBlock Text="{Binding Thought}" TextWrapping="Wrap" Foreground="{StaticResource TextForeground}" Margin="0,4,0,0" FontSize="12"/>
+                        <Border x:Name="ActionPanel" Background="{StaticResource BackgroundPrimary}" CornerRadius="4" Padding="8" Margin="0,8,0,0" 
+                                Visibility="{Binding Action, Converter={StaticResource EmptyToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="ACTION" FontWeight="Bold" FontSize="9" Foreground="{StaticResource AccentColor}"/>
+                                <TextBlock Text="{Binding Action}" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextForeground}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Column 0: Editor & Split-Screen Dashboard (*) -->
+            <ColumnDefinition Width="*" MinWidth="500"/>
+            <!-- Column 1: File Explorer & Module Queue (280) -->
+            <ColumnDefinition Width="280" MinWidth="220"/>
+            <!-- Column 2: Pure Chat Panel (400) -->
+            <ColumnDefinition Width="400" MinWidth="300"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT COLUMN: Editor & Split-Screen Dashboard -->
+        <Grid Grid.Column="0" Background="{StaticResource BackgroundTertiary}">
+            <TabControl Background="Transparent" BorderThickness="0" Padding="0">
+                <!-- TAB 1: CODE EDITOR & TERMINAL -->
+                <TabItem Header="CODE EDITOR" Padding="15,8">
+                    <Grid Background="{StaticResource EditorBackground}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*" MinHeight="150"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="250" MinHeight="80" MaxHeight="600"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Tab Bar -->
+                        <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding OpenTabs}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="12,8" Margin="0,0,1,0" Cursor="Hand" MouseLeftButtonDown="Tab_Click" Tag="{Binding}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource BackgroundTertiary}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                    <Setter Property="Background" Value="{StaticResource EditorBackground}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DisplayName}" Foreground="{StaticResource TextForeground}" VerticalAlignment="Center"/>
+                                                        <Button Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}" Width="18" Height="18" Margin="8,0,0,0" Background="Transparent" BorderThickness="0">
+                                                            <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="9"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                                
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,5">
+                                    <Button Command="{Binding ToggleTerminalCommand}" Margin="0,0,8,0" Padding="12,5">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE756;" FontFamily="{StaticResource IconFont}" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Terminal"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding SaveDocumentCommand}" Margin="0,0,8,0" Padding="12,5">
+                                        <TextBlock Text="Save"/>
+                                    </Button>
+                                    <Button Command="{Binding RunAgentCommand}" Background="{StaticResource SuccessColor}" Foreground="#1E1E1E" Padding="15,5">
+                                        <TextBlock Text="Run" FontWeight="Bold"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Editor area -->
+                        <Grid Grid.Row="1" Background="{StaticResource EditorBackground}">
+                            <Border Visibility="{Binding HasOpenTabs, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="logo.png" Width="150" Height="150" Opacity="0.3"/>
+                            </Border>
+                            <avalon:TextEditor x:Name="CodeEditor" Visibility="{Binding HasOpenTabs, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                               FontFamily="Consolas" FontSize="14" ShowLineNumbers="True" Background="{StaticResource EditorBackground}" Foreground="{StaticResource TextForeground}"
+                                               TextChanged="CodeEditor_TextChanged"/>
+                        </Grid>
+
+                        <GridSplitter Grid.Row="2" Height="6" Background="{StaticResource BorderColor}" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                      Visibility="{Binding IsTerminalVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <!-- Terminal Panel -->
+                        <Grid Grid.Row="3" Background="{StaticResource BackgroundSecondary}" Visibility="{Binding IsTerminalVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{StaticResource BackgroundTertiary}" Padding="10,5">
+                                <Grid>
+                                    <TextBlock Text="TERMINAL" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Clear" Command="{Binding ClearTerminalCommand}" Width="50" Margin="0,0,5,0"/>
+                                        <Button Command="{Binding ToggleTerminalCommand}" Width="25" Background="Transparent" BorderThickness="0">
+                                            <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <TextBox x:Name="TerminalOutputBox" Grid.Row="1" Text="{Binding TerminalOutput, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" Background="{StaticResource EditorBackground}" Foreground="{StaticResource TextForeground}" TextChanged="TerminalOutput_TextChanged"/>
+                            <TextBox Grid.Row="2" Text="{Binding TerminalInput, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource BackgroundTertiary}" Foreground="White" BorderThickness="0" Padding="5">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding ExecuteTerminalCommand}"/>
+                                </TextBox.InputBindings>
+                            </TextBox>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <!-- TAB 2: LIVE PARALLEL AGENTS DASHBOARD -->
+                <TabItem Header="LIVE PARALLEL AGENTS" Padding="15,8">
+                    <Grid Background="{StaticResource BackgroundTertiary}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Dynamic Agent Injection Panel -->
+                        <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="15">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <TextBlock Text="DYNAMIC MULTI-AGENT INJECTION" FontWeight="Bold" Foreground="{StaticResource AccentColor}" VerticalAlignment="Center" Margin="0,0,20,0" FontSize="11"/>
+                                
+                                <TextBlock Text="Name:" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11"/>
+                                <TextBox Text="{Binding CustomAgentName, UpdateSourceTrigger=PropertyChanged}" Width="120" VerticalAlignment="Center" Margin="0,0,15,0" Padding="5,3"/>
+                                
+                                <TextBlock Text="Role:" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11"/>
+                                <ComboBox SelectedItem="{Binding CustomAgentInitialStage}" Width="100" VerticalAlignment="Center" Margin="0,0,15,0">
+                                    <sys:String>Planning</sys:String>
+                                    <sys:String>Execution</sys:String>
+                                </ComboBox>
+                                
+                                <TextBlock Text="Model:" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11"/>
+                                <ComboBox ItemsSource="{Binding FilteredModels}" SelectedItem="{Binding CustomAgentSelectedModel}" Width="150" VerticalAlignment="Center" Margin="0,0,15,0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                
+                                <Button Command="{Binding AddCustomAgentCommand}" Background="{StaticResource SuccessColor}" Foreground="#1E1E1E" FontWeight="Bold" Padding="12,5" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE109;" FontFamily="{StaticResource IconFont}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Launch Parallel Agent" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Agent Dashboard Split-Screen -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding ActiveAgents}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource BackgroundSecondary}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="8" Margin="8" Padding="12" MinHeight="350">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                
+                                                <!-- Top header: Agent Name & Model -->
+                                                <Grid Grid.Row="0" Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Role}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource AccentColor}"/>
+                                                        <TextBlock Text="{Binding ModelName}" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Padding="6,3" CornerRadius="4" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="{StaticResource BackgroundTertiary}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Executing 🛠️">
+                                                                        <Setter Property="Background" Value="{StaticResource SuccessColor}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Planning 🧠">
+                                                                        <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Completed ✅">
+                                                                        <Setter Property="Background" Value="#2E7D32"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Failed ❌">
+                                                                        <Setter Property="Background" Value="{StaticResource ErrorColor}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                    </Border>
+                                                </Grid>
+
+                                                <!-- Current action text -->
+                                                <TextBlock Grid.Row="1" Text="{Binding CurrentAction}" FontSize="12" Foreground="{StaticResource TextForeground}" Margin="0,0,0,10" FontWeight="SemiBold"/>
+
+                                                <!-- Log / Terminal output box -->
+                                                <TextBox Grid.Row="2" Text="{Binding OutputLog, Mode=OneWay}" FontFamily="Consolas" FontSize="11" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="{StaticResource EditorBackground}" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <!-- Column Resizing Splitter on Right -->
+            <GridSplitter Width="6" Background="{StaticResource BorderColor}" HorizontalAlignment="Right" VerticalAlignment="Stretch" 
+                          ShowsPreview="False" ResizeDirection="Columns" Cursor="SizeWE"/>
+        </Grid>
+
+        <!-- MIDDLE COLUMN: File Explorer & Module Queue -->
+        <Border Grid.Column="1" Background="{StaticResource SidebarBackground}" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" MinHeight="150"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="280" MinHeight="150" MaxHeight="500"/>
+                </Grid.RowDefinitions>
+                
+                <!-- File Tree Explorer (Row 0) -->
+                <DockPanel Grid.Row="0">
+                    <Border DockPanel.Dock="Top" Background="{StaticResource BackgroundSecondary}" Padding="15">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="QODE EXPLORER" FontWeight="SemiBold" Foreground="{StaticResource TextForeground}" FontSize="11"/>
+                                <Button Grid.Column="1" Command="{Binding OpenFolderCommand}" 
+                                        ToolTip="Open Folder" 
+                                        Width="28" Height="28" Padding="0" Background="Transparent" BorderThickness="0">
+                                    <TextBlock Text="&#xE8DA;" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="{StaticResource AccentColor}"/>
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="{Binding WorkspacePath}" FontSize="10" Foreground="{StaticResource TextSecondary}" 
+                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
+                        <TreeView ItemsSource="{Binding Files}" Background="Transparent" BorderThickness="0"
+                                   SelectedItemChanged="TreeView_SelectedItemChanged">
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal" Margin="2">
+                                        <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="{StaticResource AccentColor}" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextForeground}"/>
+                                    </StackPanel>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- Splitter for FileTree & Module Queue -->
+                <GridSplitter Grid.Row="1" Height="6" Background="{StaticResource BorderColor}" HorizontalAlignment="Stretch" VerticalAlignment="Top" 
+                              ShowsPreview="False" ResizeDirection="Rows" Cursor="SizeNS"/>
+
+                <!-- Module Queue (Row 2) -->
+                <Grid Grid.Row="2" Background="{StaticResource BackgroundTertiary}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}" Padding="10">
+                        <Grid>
+                            <TextBlock Text="PRIORITY MODULE QUEUE" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentColor}" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Command="{Binding AddFolderToQueueCommand}" ToolTip="Add Folder" Margin="0,0,8,0" Width="24" Height="24" Background="Transparent" BorderThickness="0">
+                                    <TextBlock Text="&#xE109;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="{StaticResource SuccessColor}"/>
+                                </Button>
+                                <Button Command="{Binding RunQueueCommand}" ToolTip="Run Queue" Width="24" Height="24" Background="Transparent" BorderThickness="0">
+                                    <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="{StaticResource SuccessColor}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="10">
+                        <ItemsControl ItemsSource="{Binding ModuleQueue}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource BackgroundSecondary}" Margin="0,0,0,8" Padding="10" CornerRadius="6" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <!-- Priority badge -->
+                                            <Border Background="{StaticResource AccentColor}" CornerRadius="10" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Priority}" Foreground="#1E1E1E" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+
+                                            <!-- Module Name & Status -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Status}" FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                            </StackPanel>
+
+                                            <!-- Move buttons -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Command="{Binding DataContext.MoveQueueUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Margin="0,0,4,0" Width="24" Height="24" Background="Transparent" BorderThickness="0">
+                                                    <TextBlock Text="&#xE74A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="White"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.MoveQueueDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Width="24" Height="24" Background="Transparent" BorderThickness="0">
+                                                    <TextBlock Text="&#xE74B;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="White"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+                
+                <!-- Column Resizing Splitter on Right -->
+                <GridSplitter Width="6" Background="{StaticResource BorderColor}" HorizontalAlignment="Right" VerticalAlignment="Stretch" 
+                              ShowsPreview="False" ResizeDirection="Columns" Cursor="SizeWE" Grid.RowSpan="3"/>
+            </Grid>
+        </Border>
+
+        <!-- RIGHT COLUMN: Pure Chat Panel with Interactive Banner -->
+        <Grid Grid.Column="2" Background="{StaticResource BackgroundSecondary}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Interactive Stage-Gate Banner -->
+                <RowDefinition Height="Auto"/> <!-- Chat Header -->
+                <RowDefinition Height="*"/>    <!-- Chat History -->
+                <RowDefinition Height="Auto"/> <!-- Input Area -->
+            </Grid.RowDefinitions>
+
+            <!-- 1. Interactive Stage-Gate Banner -->
+            <Border Grid.Row="0" Background="{StaticResource BackgroundTertiary}" BorderBrush="{StaticResource AccentColor}" BorderThickness="0,0,0,2" Padding="15"
+                    Visibility="{Binding IsStageGatePending, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Arabic Announcement RTL -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                        <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{StaticResource AccentColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding PendingStageAnnouncement}" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" FlowDirection="RightToLeft"/>
+                    </StackPanel>
+                    
+                    <!-- Banner Action Buttons -->
+                    <UniformGrid Grid.Row="1" Columns="3" HorizontalAlignment="Center" Width="360">
+                        <Button Command="{Binding ApproveStageCommand}" Background="{StaticResource SuccessColor}" Foreground="#1E1E1E" FontWeight="SemiBold" Margin="5,0" Padding="8,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Start" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding SkipStageCommand}" Background="{StaticResource BackgroundSecondary}" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="SemiBold" Margin="5,0" Padding="8,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE893;" FontFamily="{StaticResource IconFont}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Skip" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding PostponeStageCommand}" Background="{StaticResource BackgroundSecondary}" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="SemiBold" Margin="5,0" Padding="8,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE814;" FontFamily="{StaticResource IconFont}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Postpone" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </Grid>
+            </Border>
+
+            <!-- 2. Chat Header -->
+            <Border Grid.Row="1" Background="{StaticResource BackgroundSecondary}" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel>
+                        <TextBlock Text="AGENT ORCHESTRATOR" FontWeight="SemiBold" Foreground="{StaticResource TextForeground}" FontSize="12"/>
+                        <TextBlock Text="Continuous Parallel Autonomous Workspace" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    
+                    <Button Grid.Column="1" Command="{Binding ToggleSettingsCommand}" Width="32" Height="32" Background="Transparent" BorderThickness="0">
+                        <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{StaticResource TextSecondary}"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- 3. Scrollable Chat History -->
+            <ScrollViewer Grid.Row="2" x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto" Padding="15" CanContentScroll="False">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding ChatHistory}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,12" Padding="15,12" CornerRadius="12" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{StaticResource AssistantMessageBg}"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Role}" Value="user">
+                                                    <Setter Property="Background" Value="{StaticResource UserMessageBg}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Role}" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,10" Foreground="{StaticResource AccentColor}"/>
+                                            <TextBox Text="{Binding Content, Mode=OneWay}" TextWrapping="Wrap" Foreground="{StaticResource TextForeground}" Background="Transparent" BorderThickness="0" IsReadOnly="True" Padding="0" AcceptsReturn="True"/>
+                                            <Border Margin="0,10,0,0" CornerRadius="8" Visibility="{Binding HasImage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Image Source="{Binding ImageData}" MaxHeight="300" Stretch="Uniform"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border Margin="0,8,0,0" Padding="12" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Thinking..." Foreground="{StaticResource TextSecondary}"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Drag & Drop Overlay for Visual input -->
+            <Border Grid.Row="2" Background="#CC1A1A1A" Visibility="{Binding VoiceAssistantStatus, Converter={StaticResource EmptyToVisibilityConverter}}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="&#xE720;" FontFamily="{StaticResource IconFont}" FontSize="48" Foreground="{StaticResource ErrorColor}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding VoiceAssistantStatus}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,20,0,0"/>
+                    <Button Command="{Binding ToggleRecordingCommand}" Content="Stop" Margin="0,20,0,0" Width="100" Height="40" Background="{StaticResource ErrorColor}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 4. Pure Input Area -->
+            <Border Grid.Row="3" Background="{StaticResource BackgroundSecondary}" Padding="15" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Command="{Binding ToggleRecordingCommand}" Width="36" Height="36" Margin="0,0,8,0">
+                        <TextBlock Text="&#xE720;" FontFamily="{StaticResource IconFont}"/>
+                    </Button>
+                    <TextBox Grid.Column="1" Text="{Binding UserMessage, UpdateSourceTrigger=PropertyChanged}" Padding="10">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SendMessageCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Grid.Column="2" Command="{Binding SendMessageCommand}" Width="38" Height="36" Margin="10,0,0,0" Background="{StaticResource AccentColor}">
+                        <TextBlock Text="&#xE724;" FontFamily="{StaticResource IconFont}"/>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- SETTINGS & TEAM MANAGEMENT MODAL OVERLAY -->
+        <Grid Grid.ColumnSpan="3" Background="#CC000000" 
+              Visibility="{Binding IsSettingsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="{StaticResource BackgroundSecondary}" Width="700" MaxHeight="800" CornerRadius="12" Padding="25" VerticalAlignment="Center" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="Settings &amp; AI Team Configuration" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextForeground}" Margin="0,0,0,15"/>
+                    
+                    <!-- Settings Tabbed Navigation -->
+                    <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,0,15">
+                        <!-- TAB 1: LLM DISCOVERY & PROVIDERS -->
+                        <TabItem Header="LLM CONFIGURATION" Padding="12,6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,15,15,0">
+                                    <!-- Discovery Section -->
+                                    <Border Background="{StaticResource BackgroundTertiary}" CornerRadius="8" Padding="15" Margin="0,0,0,20">
+                                        <StackPanel>
+                                            <TextBlock Text="MODEL DISCOVERY" FontWeight="Bold" Foreground="{StaticResource AccentColor}" FontSize="10" Margin="0,0,0,15"/>
+                                            
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Margin="0,0,10,0">
+                                                    <TextBlock Text="Provider" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,0,5"/>
+                                                    <ComboBox ItemsSource="{Binding AvailableProviders}" SelectedItem="{Binding SelectedProvider}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="API Key / Endpoint" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,0,5"/>
+                                                    <TextBox Text="{Binding ApiEndpoint}" Padding="8,5"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Margin="0,0,10,0">
+                                                    <TextBlock Text="Discovered Models" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,0,5"/>
+                                                    <ComboBox ItemsSource="{Binding FilteredModels}" SelectedItem="{Binding SelectedModelInfo}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Name}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Command="{Binding RefreshModelsCommand}" VerticalAlignment="Bottom" Margin="10,0,0,0" Width="40" Height="32">
+                                                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14"/>
+                                                </Button>
+                                            </Grid>
+
+                                            <Button Command="{Binding AddActiveModelCommand}" Content="Add Selected Model to Team Pool" HorizontalAlignment="Stretch" Margin="0,5,0,0" Background="{StaticResource AccentColor}" Foreground="#1E1E1E" FontWeight="Bold"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Active Models Pool Table -->
+                                    <TextBlock Text="ACTIVE MODEL POOL" FontWeight="Bold" Foreground="{StaticResource TextSecondary}" FontSize="10" Margin="0,0,0,10"/>
+                                    <Border Background="{StaticResource BackgroundTertiary}" CornerRadius="8" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <Border Background="{StaticResource BackgroundSecondary}" Padding="10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="80"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="PROVIDER" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextSecondary}"/>
+                                                    <TextBlock Grid.Column="1" Text="MODEL NAME" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextSecondary}"/>
+                                                    <TextBlock Grid.Column="2" Text="ASSIGNED ROLE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextSecondary}"/>
+                                                </Grid>
+                                            </Border>
+                                            
+                                            <ItemsControl ItemsSource="{Binding ActiveModels}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0" Padding="10,8">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="80"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="120"/>
+                                                                    <ColumnDefinition Width="40"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding Provider}" Foreground="{StaticResource AccentColor}" VerticalAlignment="Center" FontSize="11"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"/>
+                                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.RoleOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                          SelectedItem="{Binding AssignedRole, Mode=TwoWay}" FontSize="10"/>
+                                                                <Button Grid.Column="3" Command="{Binding DataContext.RemoveActiveModelCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource ErrorColor}" ToolTip="Remove">
+                                                                    <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- TAB 2: AI TEAM ROLES & LIVE STATUS -->
+                        <TabItem Header="AI TEAM &amp; ROLES" Padding="12,6">
+                            <Grid Margin="0,15,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Role Binding configurations (Left) -->
+                                <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="AI ROLE BINDINGS" FontWeight="Bold" Foreground="{StaticResource AccentColor}" FontSize="10" Margin="0,0,0,10"/>
+                                        <ItemsControl ItemsSource="{Binding RoleBindings}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource BackgroundTertiary}" Padding="10" Margin="0,0,0,8" CornerRadius="6">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding RoleName}" FontWeight="Bold" Foreground="White" FontSize="12"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,8"/>
+                                                            <ComboBox ItemsSource="{Binding DataContext.FilteredModels, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                      SelectedItem="{Binding SelectedModel, Mode=TwoWay}" Margin="0,0,0,5">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding Name}"/>
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </ScrollViewer>
+
+                                <!-- Team Live Status list (Right) -->
+                                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="AI TEAM LIVE STATUS" FontWeight="Bold" Foreground="{StaticResource AccentColor}" FontSize="10" Margin="0,0,0,10"/>
+                                        <ItemsControl ItemsSource="{Binding Team}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource BackgroundTertiary}" Padding="10" Margin="0,0,0,8" CornerRadius="6" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Role}" Foreground="White" FontWeight="SemiBold" FontSize="12"/>
+                                                                <TextBlock Text="{Binding AssignedModel}" Foreground="{StaticResource TextSecondary}" FontSize="10" Margin="0,2,0,0"/>
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="{StaticResource SuccessColor}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Grid>
+                        </TabItem>
+
+                        <!-- TAB 3: GLOBAL KEYS & RUNTIME -->
+                        <TabItem Header="GLOBAL KEYS &amp; GENERAL" Padding="12,6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,15,15,0">
+                                    <!-- Global API Keys -->
+                                    <TextBlock Text="GLOBAL CENTRAL KEYS" FontWeight="Bold" Foreground="{StaticResource AccentColor}" FontSize="10" Margin="0,0,0,10"/>
+                                    <Border Background="{StaticResource BackgroundTertiary}" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Google Gemini Key" Foreground="White" FontSize="11"/>
+                                            <PasswordBox Margin="0,5,0,10" helpers:PasswordBoxBinding.BindPassword="True"
+                                                         helpers:PasswordBoxBinding.BoundPassword="{Binding GeminiApiKey, Mode=TwoWay}"/>
+                                            
+                                            <TextBlock Text="OpenAI Key" Foreground="White" FontSize="11"/>
+                                            <PasswordBox Margin="0,5,0,10" helpers:PasswordBoxBinding.BindPassword="True"
+                                                         helpers:PasswordBoxBinding.BoundPassword="{Binding OpenAIApiKey, Mode=TwoWay}"/>
+
+                                            <TextBlock Text="DeepSeek Key" Foreground="White" FontSize="11"/>
+                                            <PasswordBox Margin="0,5,0,10" helpers:PasswordBoxBinding.BindPassword="True"
+                                                         helpers:PasswordBoxBinding.BoundPassword="{Binding DeepSeekApiKey, Mode=TwoWay}"/>
+
+                                            <TextBlock Text="Groq Key" Foreground="White" FontSize="11"/>
+                                            <PasswordBox Margin="0,5,0,10" helpers:PasswordBoxBinding.BindPassword="True"
+                                                         helpers:PasswordBoxBinding.BoundPassword="{Binding GroqApiKey, Mode=TwoWay}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Runtime Configuration -->
+                                    <TextBlock Text="RUNTIME PARAMETERS" FontWeight="Bold" Foreground="{StaticResource AccentColor}" FontSize="10" Margin="0,0,0,10"/>
+                                    <Border Background="{StaticResource BackgroundTertiary}" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Execution Mode" Foreground="White" FontSize="11" Margin="0,0,0,5"/>
+                                            <ComboBox ItemsSource="{Binding ExecutionModes}" SelectedItem="{Binding SelectedExecutionMode}" Margin="0,0,0,12"/>
+
+                                            <CheckBox IsChecked="{Binding IsAutoRotateEnabled, Mode=TwoWay}" Foreground="White" Content="Enable Auto-Rotate model fallback on quota limits" Margin="0,5,0,10"/>
+                                            
+                                            <TextBlock Text="Workspace Path" Foreground="White" FontSize="11" Margin="0,5,0,5"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Text="{Binding WorkspacePath}" IsReadOnly="True" Padding="8,5"/>
+                                                <Button Grid.Column="1" Command="{Binding BrowseFolderCommand}" Content="Browse" Width="70" Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Connection Probing Status -->
+                                    <Border Background="{StaticResource BackgroundTertiary}" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="Connection Probing Status" Foreground="{StaticResource TextSecondary}" FontSize="10" Margin="0,0,0,5"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse">
+                                                            <Setter Property="Fill" Value="{StaticResource ErrorColor}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                    <Setter Property="Fill" Value="{StaticResource SuccessColor}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="{Binding ConnectionStatus}" Foreground="White" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+
+                    <!-- Modal Actions -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Command="{Binding TestConnectionCommand}" Content="Test Connection" Width="120" Height="32" Margin="0,0,10,0"/>
+                        <Button Command="{Binding SaveSettingsCommand}" Content="Save Settings" Width="120" Height="32" Margin="0,0,10,0" Background="{StaticResource AccentColor}" Foreground="#1E1E1E" FontWeight="SemiBold"/>
+                        <Button Command="{Binding ToggleSettingsCommand}" Content="Cancel" Width="80" Height="32"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
