@@ -126,6 +126,16 @@ assets/mermaid-diagram.png
 - Ollama (Local)
 - LM Studio (Local)
 
+## Real Use Case
+
+Qode can be used to:
+
+- Build full-stack applications
+- Perform code reviews
+- Run security audits
+- Design system architecture
+- Automate engineering workflows
+
 ---
 
 ## 🧠 Memory Layer
