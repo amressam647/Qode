@@ -86,5 +86,14 @@ Agents collaborate like a real engineering team.
 
 ```bash
 git clone https://github.com/yourname/qode.git
+
+## 📈 Why Qode
+
+Qode introduces AI team collaboration instead of single-model usage, enabling:
+
+- Better accuracy  
+- Specialized reasoning  
+- Parallel task execution  
+- Enterprise workflows  
 cd qode
 dotnet run
