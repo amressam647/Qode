@@ -97,3 +97,38 @@ Qode introduces AI team collaboration instead of single-model usage, enabling:
 - Enterprise workflows  
 cd qode
 dotnet run
+## 🧠 Architecture
+
+Qode is built as a layered multi-agent system:
+## 1. UI Layer
+- Desktop App
+- Interaction with users
+
+## 2. Agent Manager
+- Create / manage agents
+- Assign roles
+
+## 3. Orchestration Layer
+- Task splitting
+- Coordination between agents
+
+## 4. Role Engine
+- Defines behavior of each agent
+
+## 5. Model Router
+- Chooses AI model per agent
+
+---
+
+## 🌐 Providers Layer
+- OpenAI
+- Google AI
+- Ollama (Local)
+- LM Studio (Local)
+
+---
+
+## 🧠 Memory Layer
+- Context sharing between agents
+- Task history
+
