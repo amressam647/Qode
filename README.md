@@ -20,5 +20,8 @@ Qode supports both local and cloud-based AI providers, including Ollama, LM Stud
 ### Vision
 
 Qode's mission is to become the operating system for collaborative AI, enabling humans and teams of specialized AI agents to work together seamlessly in a single intelligent workspace.
+## Preview
+
+![Qode UI](assets/qode-ui.png)
 
 By combining local AI, cloud AI, role-based orchestration, and agent collaboration, Qode delivers a powerful platform for building, managing, and scaling AI-driven workflows.
