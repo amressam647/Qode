@@ -1,38 +1,24 @@
 # Qode
 
-Qode is a local-first multi-agent AI development environment designed to orchestrate multiple AI models as a coordinated team.
+Qode is a local-first, multi-agent AI development environment that transforms individual AI models into a collaborative intelligent workforce.
 
-Unlike traditional AI assistants that rely on a single model, Qode allows users to assign specialized roles, models, and policies to multiple AI agents, enabling collaborative problem solving, code generation, architecture reviews, security analysis, research, and project planning.
+Unlike traditional AI tools that rely on a single model, Qode allows users to create specialized AI agents, assign custom roles, policies, and responsibilities, and connect each agent to the most suitable AI model. Agents can collaborate as a coordinated team to solve complex tasks such as software development, architecture design, code review, security analysis, research, planning, and automation.
 
-Whether running fully local models through Ollama and LM Studio or leveraging cloud providers such as OpenAI and Google AI, Qode provides a unified workspace where AI agents work together toward a common goal.
+Qode supports both local and cloud-based AI providers, including Ollama, LM Studio, OpenAI, Google AI, and other compatible APIs, giving users complete flexibility between privacy, performance, and scalability.
 
-## Why Qode?
+### Key Capabilities
 
-Modern AI tools typically use a single model for all tasks.
+- Local-first architecture with optional cloud integration
+- Support for multiple AI providers and models
+- Multi-agent collaboration and task orchestration
+- Custom roles, policies, and instructions for each agent
+- Model assignment per role for specialized workflows
+- Flexible team structures for development, research, and automation
+- Privacy-focused operation with local model support
+- Extensible architecture for future integrations and plugins
 
-Qode introduces a team-based AI workflow where:
+### Vision
 
-- Architects design solutions.
-- Developers implement code.
-- Reviewers validate quality.
-- Security agents identify risks.
-- Project managers coordinate execution.
+Qode's mission is to become the operating system for collaborative AI, enabling humans and teams of specialized AI agents to work together seamlessly in a single intelligent workspace.
 
-Each agent can use a different model, role, memory, and policy.
-
-This approach improves specialization, reduces hallucinations, and creates more reliable outcomes for complex projects.
-
-## Current Features
-
-- Multi-Agent Architecture
-- Local AI Support (Ollama, LM Studio)
-- Cloud AI Support (OpenAI, Google AI)
-- Custom Roles and Policies
-- Agent-to-Agent Collaboration
-- Model Assignment Per Role
-- Local-First Design
-- Extensible Architecture
-
-## Vision
-
-Our goal is to build the next-generation AI workspace where teams of AI agents collaborate with humans to solve real-world problems efficiently and securely.
+By combining local AI, cloud AI, role-based orchestration, and agent collaboration, Qode delivers a powerful platform for building, managing, and scaling AI-driven workflows.
