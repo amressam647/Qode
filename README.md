@@ -98,8 +98,8 @@ Qode introduces AI team collaboration instead of single-model usage, enabling:
 cd qode
 dotnet run
 ## 🧠 Architecture
-
 Qode is built as a layered multi-agent system:
+assets/mermaid-diagram.png
 ## 1. UI Layer
 - Desktop App
 - Interaction with users
