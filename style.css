@@ -1,0 +1,264 @@
+/* 
+ * Local Cursor - Premium VS Code Theme 
+ * Replicated from existing Streamlit UI
+ */
+
+:root {
+    --bg-main: #0e0e0e;
+    --bg-sidebar: #181818;
+    --bg-input: #252526;
+    --bg-accent: #0e639c;
+    --bg-accent-hover: #1177bb;
+    --text-main: #cccccc;
+    --text-muted: #969696;
+    --border: #2b2b2b;
+    --border-input: #3c3c3c;
+    --accent-blue: #007acc;
+    --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+}
+
+/* Sidebar Layout */
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+.nav-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn.active {
+    background-color: var(--bg-accent);
+    color: white;
+}
+
+.new-agent-btn {
+    background-color: var(--bg-accent);
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: var(--border);
+    margin: 15px 0;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+/* Chat Section */
+.chat-section {
+    flex: 0.65;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    padding: 20px;
+}
+
+.chat-section h4 {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+}
+
+.chat-history {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+.chat-message {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 90%;
+}
+
+.chat-message.user {
+    background-color: rgba(255, 255, 255, 0.03);
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.chat-message.assistant {
+    background-color: transparent;
+    border: 1px solid var(--border);
+}
+
+/* Chat Input Container */
+.chat-input-container {
+    position: relative;
+    margin-top: 10px;
+}
+
+.chat-input {
+    width: 100%;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border-input);
+    border-radius: 6px;
+    padding: 12px 15px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.chat-input:focus {
+    border-color: var(--accent-blue);
+}
+
+/* Explorer Section */
+.explorer-section {
+    flex: 0.35;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.explorer-section h4 {
+    margin-bottom: 15px;
+    color: var(--text-muted);
+}
+
+.file-explorer {
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    flex: 0.4;
+    margin-bottom: 20px;
+}
+
+.code-view {
+    flex: 0.6;
+    background-color: #1e1e1e;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 15px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow: auto;
+    white-space: pre;
+}
+
+/* Settings View Overlays */
+.settings-view {
+    position: absolute;
+    top: 0;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-main);
+    padding: 40px;
+    display: none;
+    z-index: 100;
+}
+
+.settings-view.active {
+    display: block;
+}
+
+.settings-view h1 {
+    margin-bottom: 30px;
+}
+
+.settings-group {
+    margin-bottom: 25px;
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 20px;
+}
+
+.settings-group h5 {
+    margin-bottom: 15px;
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-field {
+    margin-bottom: 15px;
+}
+
+.settings-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.settings-field input {
+    width: 100%;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-input);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
